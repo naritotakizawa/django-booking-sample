@@ -1,0 +1,11 @@
+{% extends 'booking/base.html' %}
+
+{% block content %}
+    <h1>{{ staff.store.name }}店 {{ staff.name }}</h1>
+    <p>{{ view.kwargs.year }}年{{ view.kwargs.month }}月{{ view.kwargs.day }}日 {{ view.kwargs.hour }}時に予約</p>
+    <form action="" method="POST">
+        {{ form.as_p }}
+        {% csrf_token %}
+        <button type="submit">送信</button>
+    </form>
+{% endblock %}
