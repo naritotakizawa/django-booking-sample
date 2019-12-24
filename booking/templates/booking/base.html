@@ -10,11 +10,28 @@
         body {
             width: 960px;
             margin: 0 auto;
+            padding-top: 50px;
         }
+
+        nav > a {
+            margin-right: 10px;
+        }
+
+
     </style>
 </head>
 
 <body>
+
+<nav>
+    <a href="{% url 'booking:store_list' %}">Home</a>
+    {% if user.is_authenticated %}
+        <a href="{% url 'booking:my_page' %}">MyPage</a>
+        <a href="{% url 'admin:logout' %}">Logout</a>
+    {% else %}
+        <a href="{% url 'admin:login' %}">Login</a>
+    {% endif %}
+</nav>
 
 {% for message in messages %}
     <p> {{ message }}</p>

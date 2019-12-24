@@ -1,11 +1,27 @@
 import datetime
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views import generic
 from .models import Store, Staff, Schedule
+
+
+class OnlyStaffMixin(UserPassesTestMixin):
+    raise_exception = True
+
+    def test_func(self):
+        staff = get_object_or_404(Staff, pk=self.kwargs['pk'])
+        return staff.user == self.request.user or self.request.user.is_superuser
+
+
+class OnlyUserMixin(UserPassesTestMixin):
+    raise_exception = True
+
+    def test_func(self):
+        return self.kwargs['pk'] == self.request.user.pk or self.request.user.is_superuser
 
 
 class StoreList(generic.ListView):
@@ -58,7 +74,8 @@ class StaffCalendar(generic.TemplateView):
             calendar[hour] = row
 
         # カレンダー表示する最初と最後の日時の間にある予約を取得する
-        for schedule in Schedule.objects.filter(staff=staff).exclude(Q(start__gte=end_day+datetime.timedelta(days=1)) | Q(end__lte=start_day)):
+        for schedule in Schedule.objects.filter(staff=staff).exclude(
+                Q(start__gte=end_day + datetime.timedelta(days=1)) | Q(end__lte=start_day)):
             try:
                 local_dt = timezone.localtime(schedule.start)
                 booking_date = local_dt.date()
@@ -108,3 +125,32 @@ class Booking(generic.CreateView):
             schedule.end = end
             schedule.save()
         return redirect('booking:calendar', pk=staff.pk, year=year, month=month, day=day)
+
+
+class MyPage(LoginRequiredMixin, generic.TemplateView):
+    template_name = 'booking/my_page.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['staff_list'] = Staff.objects.filter(user=self.request.user)
+        context['schedule_list'] = Schedule.objects.filter(staff__user=self.request.user)
+        return context
+
+
+class MyPageWithPk(OnlyUserMixin, generic.TemplateView):
+    template_name = 'booking/my_page.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['staff_list'] = Staff.objects.filter(user__pk=self.kwargs['pk'])
+        context['schedule_list'] = Schedule.objects.filter(staff__user__pk=self.kwargs['pk'])
+        return context
+
+
+class MyPageCalendar(OnlyStaffMixin, StaffCalendar):
+    template_name = 'booking/my_page_calendar.html'
+
+
+class MyPageConfig(OnlyStaffMixin, generic.TemplateView):
+    template_name = 'booking/my_page_config.html'
+

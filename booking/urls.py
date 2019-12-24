@@ -9,4 +9,10 @@ urlpatterns = [
     path('staff/<int:pk>/calendar/', views.StaffCalendar.as_view(), name='calendar'),
     path('staff/<int:pk>/calendar/<int:year>/<int:month>/<int:day>/', views.StaffCalendar.as_view(), name='calendar'),
     path('staff/<int:pk>/booking/<int:year>/<int:month>/<int:day>/<int:hour>/', views.Booking.as_view(), name='booking'),
+
+    path('mypage/', views.MyPage.as_view(), name='my_page'),
+    path('mypage/<int:pk>/', views.MyPageWithPk.as_view(), name='my_page_with_pk'),
+    path('mypage/<int:pk>/calendar/', views.MyPageCalendar.as_view(), name='my_page_calendar'),
+    path('mypage/<int:pk>/calendar/<int:year>/<int:month>/<int:day>/', views.MyPageCalendar.as_view(), name='my_page_calendar'),
+    path('mypage/<int:pk>/config/<int:year>/<int:month>/<int:day>/', views.MyPageConfig.as_view(), name='my_page_config'),
 ]

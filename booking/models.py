@@ -38,4 +38,4 @@ class Schedule(models.Model):
     def __str__(self):
         start = timezone.localtime(self.start).strftime('%Y/%m/%d %H:%M:%S')
         end = timezone.localtime(self.end).strftime('%Y/%m/%d %H:%M:%S')
-        return f'{self.name} {start} ~ {end}'
+        return f'{self.name} {start} ~ {end} {self.staff}'
