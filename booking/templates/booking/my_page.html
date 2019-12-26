@@ -14,7 +14,7 @@
     <h2>直近の予約</h2>
     <ul>
         {% for schedule in schedule_list %}
-            <li><a href="">{{ schedule }}</a></li>
+            <li><a href="{% url 'booking:my_page_schedule' schedule.pk %}">{{ schedule }}</a></li>
         {% empty %}
             <li>予約はありません。</li>
         {% endfor %}

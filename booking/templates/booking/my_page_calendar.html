@@ -29,9 +29,7 @@
                 </td>
                 {% for dt, book in schedules.items %}
                     <td>
-                        {% if dt <= today %}
-                            -
-                        {% elif book %}
+                        {% if book %}
                             ○
                         {% else %}
                             ×

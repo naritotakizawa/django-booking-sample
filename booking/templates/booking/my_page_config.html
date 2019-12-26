@@ -3,6 +3,23 @@
 {% block content %}
 
     <h1>{{ staff.store.name }}店 {{ staff.name }}</h1>
-    <p>{{ start_day }} - {{ end_day }}</p>
+    <p>{{ view.kwargs.year }}年{{ views.kwargs.month }}月{{ view.kwargs.day }}日の予約一覧</p>
+    <table class="table table-bordered text-center" style="table-layout: fixed;width: 100%" border="1">
+        {% for hour, schedules in calendar.items %}
+            <tr style="font-size:12px">
+                <td>
+                    {{ hour }}:00
+                </td>
+                <td>
+                    {% for s in schedules %}
+                        <a href="{% url 'booking:my_page_schedule' s.pk  %}">{{ s.name }}</a>
+                    {% endfor %}
+                </td>
+                <td>
+                    {{ hour }}:00
+                </td>
+            </tr>
+        {% endfor %}
 
+    </table>
 {% endblock %}

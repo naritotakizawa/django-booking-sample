@@ -161,3 +161,7 @@ PUBLIC_HOLIDAYS = [
     datetime.date(year=2021, month=11, day=3),
     datetime.date(year=2021, month=11, day=23),
 ]
+
+LOGIN_URL = 'booking:login'
+LOGIN_REDIRECT_URL = 'booking:store_list'
+LOGOUT_REDIRECT_URL = 'booking:store_list'

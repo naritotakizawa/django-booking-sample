@@ -3,7 +3,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, resolve_url
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import generic
 from .models import Store, Staff, Schedule
@@ -15,6 +16,14 @@ class OnlyStaffMixin(UserPassesTestMixin):
     def test_func(self):
         staff = get_object_or_404(Staff, pk=self.kwargs['pk'])
         return staff.user == self.request.user or self.request.user.is_superuser
+
+
+class OnlyScheduleMixin(UserPassesTestMixin):
+    raise_exception = True
+
+    def test_func(self):
+        schedule = get_object_or_404(Schedule, pk=self.kwargs['pk'])
+        return schedule.staff.user == self.request.user or self.request.user.is_superuser
 
 
 class OnlyUserMixin(UserPassesTestMixin):
@@ -154,3 +163,43 @@ class MyPageCalendar(OnlyStaffMixin, StaffCalendar):
 class MyPageConfig(OnlyStaffMixin, generic.TemplateView):
     template_name = 'booking/my_page_config.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs['pk']
+        staff = get_object_or_404(Staff, pk=pk)
+        year = self.kwargs.get('year')
+        month = self.kwargs.get('month')
+        day = self.kwargs.get('day')
+        date = datetime.date(year=year, month=month, day=day)
+
+        # 9時から17時まで1時間刻みのカレンダーを作る
+        calendar = {}
+        for hour in range(9, 18):
+            calendar[hour] = []
+
+        # カレンダー表示する最初と最後の日時の間にある予約を取得する
+        for schedule in Schedule.objects.filter(staff=staff).exclude(
+                Q(start__gte=date + datetime.timedelta(days=1)) | Q(end__lte=date)):
+            try:
+                local_dt = timezone.localtime(schedule.start)
+                booking_hour = local_dt.hour
+                if booking_hour in calendar:
+                    calendar[booking_hour].append(schedule)
+            except KeyError:
+                # 今回ならば20時とか、本来予約が入らないはずの時間を参照するとKeyError。
+                pass
+
+        context['calendar'] = calendar
+        context['staff'] = staff
+        return context
+
+
+class MyPageSchedule(OnlyScheduleMixin, generic.UpdateView):
+    model = Schedule
+    fields = ('start', 'end', 'name')
+    success_url = reverse_lazy('booking:my_page')
+
+
+class MyPageScheduleDelete(OnlyScheduleMixin, generic.DeleteView):
+    model = Schedule
+    success_url = reverse_lazy('booking:my_page')
