@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect, resolve_url
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import generic
@@ -37,6 +37,7 @@ class OnlyUserMixin(UserPassesTestMixin):
 
 class StoreList(generic.ListView):
     model = Store
+    ordering = 'name'
 
 
 class StaffList(generic.ListView):
