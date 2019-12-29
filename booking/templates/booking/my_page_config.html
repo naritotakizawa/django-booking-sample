@@ -11,12 +11,17 @@
                     {{ hour }}:00
                 </td>
                 <td>
-                    {% for s in schedules %}
-                        <a href="{% url 'booking:my_page_schedule' s.pk  %}">{{ s.name }}</a>
-                    {% endfor %}
-                </td>
-                <td>
-                    {{ hour }}:00
+                    {% if schedules %}
+                        {% for s in schedules %}
+                            <a href="{% url 'booking:my_page_schedule' s.pk %}">{{ s.name }}</a>
+                        {% endfor %}
+                    {% else %}
+                        <form action="{% url 'booking:my_page_holiday_add' staff.pk view.kwargs.year view.kwargs.month view.kwargs.day hour %}"
+                              method="POST">
+                            {% csrf_token %}
+                            <button type="submit">休暇にする</button>
+                        </form>
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}

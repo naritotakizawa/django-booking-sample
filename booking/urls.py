@@ -19,5 +19,6 @@ urlpatterns = [
     path('mypage/<int:pk>/config/<int:year>/<int:month>/<int:day>/', views.MyPageConfig.as_view(), name='my_page_config'),
     path('mypage/schedule/<int:pk>/', views.MyPageSchedule.as_view(), name='my_page_schedule'),
     path('mypage/schedule/<int:pk>/delete/', views.MyPageScheduleDelete.as_view(), name='my_page_schedule_delete'),
+    path('mypage/holiday/add/<int:pk>/<int:year>/<int:month>/<int:day>/<int:hour>/', views.my_page_holiday_add, name='my_page_holiday_add'),
 ]
 

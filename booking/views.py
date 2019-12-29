@@ -2,11 +2,13 @@ import datetime
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, resolve_url
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import generic
+from django.views.decorators.http import require_POST
 from .models import Store, Staff, Schedule
 
 
@@ -203,3 +205,15 @@ class MyPageSchedule(OnlyScheduleMixin, generic.UpdateView):
 class MyPageScheduleDelete(OnlyScheduleMixin, generic.DeleteView):
     model = Schedule
     success_url = reverse_lazy('booking:my_page')
+
+
+@require_POST
+def my_page_holiday_add(request, pk, year, month, day, hour):
+    staff = get_object_or_404(Staff, pk=pk)
+    if request.user.is_authenticated and staff.user != request.user:
+        raise PermissionDenied
+
+    start = datetime.datetime(year=year, month=month, day=day, hour=hour)
+    end = datetime.datetime(year=year, month=month, day=day, hour=hour + 1)
+    Schedule.objects.create(staff=staff, start=start, end=end, name='休暇')
+    return redirect('booking:my_page_config', pk=pk, year=year, month=month, day=day)
