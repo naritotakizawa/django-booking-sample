@@ -42,6 +42,7 @@ class StoreList(generic.ListView):
 
 class StaffList(generic.ListView):
     model = Staff
+    ordering = 'name'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
