@@ -285,3 +285,50 @@ class MyPageConfigViewTests(TestCase):
         Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
         response = self.client.get(resolve_url('booking:my_page_config', pk=staff.pk, year=now.year, month=now.month, day=now.day))
         self.assertNotContains(response, 'テスト')
+
+
+class MyPageScheduleViewTests(TestCase):
+    fixtures = ['initial']
+
+    def test_anonymous(self):
+        now = timezone.now()
+        staff = get_object_or_404(Staff, pk=1)
+        s1 = Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.get(resolve_url('booking:my_page_schedule', pk=s1.pk))
+        self.assertEqual(response.status_code, 403)
+
+    def test_login_admin(self):
+        self.client.login(username='admin', password='admin123')
+        now = timezone.now()
+        staff = get_object_or_404(Staff, pk=1)
+        s1 = Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.get(resolve_url('booking:my_page_schedule', pk=s1.pk))
+        self.assertContains(response, '店舗A店 ぱいそん')
+
+    def test_login_tanaka(self):
+        self.client.login(username='tanakataro', password='helloworld123')
+        now = timezone.now()
+        staff = get_object_or_404(Staff, pk=1)
+        s1 = Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.get(resolve_url('booking:my_page_schedule', pk=s1.pk))
+        self.assertContains(response, '店舗A店 ぱいそん')
+
+    def test_login_yosida(self):
+        self.client.login(username='yosidaziro', password='helloworld123')
+        now = timezone.now()
+        staff = get_object_or_404(Staff, pk=1)
+        s1 = Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.get(resolve_url('booking:my_page_schedule', pk=s1.pk))
+        self.assertEqual(response.status_code, 403)
+
+    def test_post(self):
+        self.client.login(username='tanakataro', password='helloworld123')
+        now = timezone.now() + datetime.timedelta(hours=9)
+        staff = get_object_or_404(Staff, pk=1)
+        s1 = Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.post(
+            resolve_url('booking:my_page_schedule', pk=s1.pk),
+            {'name': '更新しました', 'start': '2020-01-01 09:00:00', 'end': '2020-01-01 09:00:00'},
+            follow=True
+        )
+        self.assertEqual(list(response.context['schedule_list']), [s1])
