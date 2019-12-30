@@ -170,59 +170,40 @@ class MyPageViewTests(TestCase):
     def test_login_admin(self):
         self.client.login(username='admin', password='admin123')
         response = self.client.get(resolve_url('booking:my_page'))
-        self.assertQuerysetEqual(
-            response.context['staff_list'],
-            []
-        )
-        self.assertQuerysetEqual(
-            response.context['schedule_list'],
-            []
-        )
+        self.assertQuerysetEqual(response.context['staff_list'], [])
+        self.assertQuerysetEqual(response.context['schedule_list'], [])
 
     def test_login_tanaka(self):
         self.client.login(username='tanakataro', password='helloworld123')
         response = self.client.get(resolve_url('booking:my_page'))
-        self.assertQuerysetEqual(
-            response.context['staff_list'],
-            ['<Staff: 店舗B - じゃんご>', '<Staff: 店舗A - ぱいそん>']
-        )
-        self.assertQuerysetEqual(
-            response.context['schedule_list'],
-            []
-        )
+        self.assertQuerysetEqual(response.context['staff_list'], ['<Staff: 店舗B - じゃんご>', '<Staff: 店舗A - ぱいそん>'])
+        self.assertQuerysetEqual(response.context['schedule_list'], [])
 
     def test_login_tanaka_with_schedule(self):
         staff1 = get_object_or_404(Staff, pk=1)
         staff2 = get_object_or_404(Staff, pk=2)
         staff3 = get_object_or_404(Staff, pk=3)
         now = timezone.localtime()
-        Schedule.objects.create(staff=staff1, start=now - datetime.timedelta(hours=1), end=now, name='テスト1')
-        Schedule.objects.create(staff=staff1, start=now + datetime.timedelta(hours=1), end=now, name='テスト2')
-        Schedule.objects.create(staff=staff2, start=now + datetime.timedelta(hours=1), end=now, name='テスト3')
-        Schedule.objects.create(staff=staff3, start=now + datetime.timedelta(hours=1), end=now, name='テスト4')
+        s1 = Schedule.objects.create(staff=staff1, start=now - datetime.timedelta(hours=1), end=now, name='テスト1')
+        s2 = Schedule.objects.create(staff=staff1, start=now + datetime.timedelta(hours=1), end=now, name='テスト2')
+        s3 = Schedule.objects.create(staff=staff2, start=now + datetime.timedelta(hours=1), end=now, name='テスト3')
+        s4 = Schedule.objects.create(staff=staff3, start=now + datetime.timedelta(hours=1), end=now, name='テスト4')
         self.client.login(username='tanakataro', password='helloworld123')
         response = self.client.get(resolve_url('booking:my_page'))
-        self.assertQuerysetEqual(
-            response.context['schedule_list'],
-            [f'<Schedule: テスト2 {now.year}/{now.month}/{now.day} {now.hour+1}:{now.minute}:{now.second} ~ {now.year}/{now.month}/{now.day} {now.hour}:{now.minute}:{now.second} 店舗A - ぱいそん>',
-             f'<Schedule: テスト3 {now.year}/{now.month}/{now.day} {now.hour+1}:{now.minute}:{now.second} ~ {now.year}/{now.month}/{now.day} {now.hour}:{now.minute}:{now.second} 店舗B - じゃんご>']
-        )
+        self.assertEqual(list(response.context['schedule_list']), [s2, s3])
 
     def test_login_yosida_with_schedule(self):
         staff1 = get_object_or_404(Staff, pk=1)
         staff2 = get_object_or_404(Staff, pk=2)
         staff3 = get_object_or_404(Staff, pk=3)
         now = timezone.localtime()
-        Schedule.objects.create(staff=staff1, start=now - datetime.timedelta(hours=1), end=now, name='テスト1')
-        Schedule.objects.create(staff=staff1, start=now + datetime.timedelta(hours=1), end=now, name='テスト2')
-        Schedule.objects.create(staff=staff2, start=now + datetime.timedelta(hours=1), end=now, name='テスト3')
-        Schedule.objects.create(staff=staff3, start=now + datetime.timedelta(hours=1), end=now, name='テスト4')
+        s1 = Schedule.objects.create(staff=staff1, start=now - datetime.timedelta(hours=1), end=now, name='テスト1')
+        s2 = Schedule.objects.create(staff=staff1, start=now + datetime.timedelta(hours=1), end=now, name='テスト2')
+        s3 = Schedule.objects.create(staff=staff2, start=now + datetime.timedelta(hours=1), end=now, name='テスト3')
+        s4 = Schedule.objects.create(staff=staff3, start=now + datetime.timedelta(hours=1), end=now, name='テスト4')
         self.client.login(username='yosidaziro', password='helloworld123')
         response = self.client.get(resolve_url('booking:my_page'))
-        self.assertQuerysetEqual(
-            response.context['schedule_list'],
-            [f'<Schedule: テスト4 {now.year}/{now.month}/{now.day} {now.hour+1}:{now.minute}:{now.second} ~ {now.year}/{now.month}/{now.day} {now.hour}:{now.minute}:{now.second} 店舗A - じゃば>'],
-        )
+        self.assertEqual(list(response.context['schedule_list']), [s4])
 
 
 class MyPageWithPkViewTests(TestCase):
@@ -280,3 +261,27 @@ class MyPageCalendarViewTests(TestCase):
 
 class MyPageConfigViewTests(TestCase):
     fixtures = ['initial']
+
+    def test_no_schedule(self):
+        self.client.login(username='tanakataro', password='helloworld123')
+        staff = get_object_or_404(Staff, pk=1)
+        now = timezone.localtime().replace(hour=9, minute=0, second=0)
+        response = self.client.get(resolve_url('booking:my_page_config', pk=staff.pk, year=now.year, month=now.month, day=now.day))
+        self.assertContains(response, '店舗A店 ぱいそん')
+        self.assertContains(response, f'{now.year}年{now.month}月{now.day}日の予約一覧')
+
+    def test_one_schedule_9(self):
+        self.client.login(username='tanakataro', password='helloworld123')
+        staff = get_object_or_404(Staff, pk=1)
+        now = timezone.localtime().replace(hour=9, minute=0, second=0)
+        Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.get(resolve_url('booking:my_page_config', pk=staff.pk, year=now.year, month=now.month, day=now.day))
+        self.assertContains(response, 'テスト')
+
+    def test_one_schedule_23(self):
+        self.client.login(username='tanakataro', password='helloworld123')
+        staff = get_object_or_404(Staff, pk=1)
+        now = timezone.localtime().replace(hour=23, minute=0, second=0)
+        Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        response = self.client.get(resolve_url('booking:my_page_config', pk=staff.pk, year=now.year, month=now.month, day=now.day))
+        self.assertNotContains(response, 'テスト')
