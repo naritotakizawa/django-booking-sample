@@ -130,7 +130,7 @@ class Booking(generic.CreateView):
         start = datetime.datetime(year=year, month=month, day=day, hour=hour)
         end = datetime.datetime(year=year, month=month, day=day, hour=hour + 1)
         if Schedule.objects.filter(staff=staff, start__gte=start, end__lte=end).exists():
-            messages.error(self.request, f'すみません、入れ違いで予約がありました。別の日時はどうですか。')
+            messages.error(self.request, 'すみません、入れ違いで予約がありました。別の日時はどうですか。')
         else:
             schedule = form.save(commit=False)
             schedule.staff = staff
@@ -145,8 +145,8 @@ class MyPage(LoginRequiredMixin, generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['staff_list'] = Staff.objects.filter(user=self.request.user)
-        context['schedule_list'] = Schedule.objects.filter(staff__user=self.request.user)
+        context['staff_list'] = Staff.objects.filter(user=self.request.user).order_by('name')
+        context['schedule_list'] = Schedule.objects.filter(staff__user=self.request.user, start__gte=timezone.now()).order_by('start')
         return context
 
 
