@@ -215,6 +215,7 @@ class MyPageViewTests(TestCase):
         response = self.client.get(resolve_url('booking:my_page'))
         self.assertQuerysetEqual(response.context['staff_list'], [])
         self.assertQuerysetEqual(response.context['schedule_list'], [])
+        self.assertContains(response, 'adminのMyPage')
 
     def test_login_tanaka(self):
         """田中でログイン。スタッフデータが表示されることを確認"""
@@ -222,6 +223,7 @@ class MyPageViewTests(TestCase):
         response = self.client.get(resolve_url('booking:my_page'))
         self.assertQuerysetEqual(response.context['staff_list'], ['<Staff: 店舗B - じゃんご>', '<Staff: 店舗A - ぱいそん>'])
         self.assertQuerysetEqual(response.context['schedule_list'], [])
+        self.assertContains(response, 'tanakataroのMyPage')
 
     def test_login_tanaka_with_schedule(self):
         """田中でログインし、予約がある場合、自分担当の予約だけ表示されるか確認。"""
@@ -250,6 +252,7 @@ class MyPageViewTests(TestCase):
         self.client.login(username='yosidaziro', password='helloworld123')
         response = self.client.get(resolve_url('booking:my_page'))
         self.assertEqual(list(response.context['schedule_list']), [s4])
+        self.assertContains(response, 'yosidaziroのMyPage')
 
 
 class MyPageWithPkViewTests(TestCase):
@@ -265,17 +268,31 @@ class MyPageWithPkViewTests(TestCase):
         self.client.login(username='admin', password='admin123')
         response = self.client.get(resolve_url('booking:my_page_with_pk', pk=2))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'tanakataroのMyPage')
 
     def test_login_tanaka(self):
         """自分自身のマイページは見れる"""
         self.client.login(username='tanakataro', password='helloworld123')
         response = self.client.get(resolve_url('booking:my_page_with_pk', pk=2))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'tanakataroのMyPage')
 
     def test_login_yosida(self):
         """他人のマイページは見れない"""
         self.client.login(username='yosidaziro', password='helloworld123')
         response = self.client.get(resolve_url('booking:my_page_with_pk', pk=2))
+        self.assertEqual(response.status_code, 403)
+
+    def test_not_exist_user(self):
+        """存在しないユーザーページにスーパーユーザーで行くと、404"""
+        self.client.login(username='admin', password='admin123')
+        response = self.client.get(resolve_url('booking:my_page_with_pk', pk=10000))
+        self.assertEqual(response.status_code, 404)
+
+    def test_not_exist_user(self):
+        """存在しないユーザーページに一般ユーザーで行くと、403"""
+        self.client.login(username='tanakataro', password='helloworld123')
+        response = self.client.get(resolve_url('booking:my_page_with_pk', pk=10000))
         self.assertEqual(response.status_code, 403)
 
 

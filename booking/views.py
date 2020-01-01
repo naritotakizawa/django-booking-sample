@@ -1,6 +1,7 @@
 import datetime
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
@@ -10,6 +11,8 @@ from django.utils import timezone
 from django.views import generic
 from django.views.decorators.http import require_POST
 from .models import Store, Staff, Schedule
+
+User = get_user_model()
 
 
 class OnlyStaffMixin(UserPassesTestMixin):
@@ -155,6 +158,7 @@ class MyPageWithPk(OnlyUserMixin, generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['user'] = get_object_or_404(User, pk=self.kwargs['pk'])
         context['staff_list'] = Staff.objects.filter(user__pk=self.kwargs['pk']).order_by('name')
         context['schedule_list'] = Schedule.objects.filter(staff__user__pk=self.kwargs['pk'], start__gte=timezone.now()).order_by('name')
         return context
