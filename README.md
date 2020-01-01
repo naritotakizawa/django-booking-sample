@@ -14,5 +14,5 @@ python manage.py runserver
 ## テストする
 ```
 coverage run --source='.' manage.py test booking
-coverage report
+coverage report -m
 ```

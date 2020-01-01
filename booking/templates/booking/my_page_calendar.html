@@ -17,7 +17,7 @@
                 {% else %}
                     <th>{{ day | date:"d(D)" }}
                 {% endif %}
-                <br><a href="{% url 'booking:my_page_config' staff.pk day.year day.month day.day %}">設定</a>
+                <br><a href="{% url 'booking:my_page_day_detail' staff.pk day.year day.month day.day %}">詳細</a>
             {% endfor %}
             <td><a href="{% url 'booking:my_page_calendar' staff.pk next.year next.month next.day %}">次週</a></td>
         </tr>

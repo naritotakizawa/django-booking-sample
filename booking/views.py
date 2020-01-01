@@ -146,7 +146,7 @@ class MyPage(LoginRequiredMixin, generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['staff_list'] = Staff.objects.filter(user=self.request.user).order_by('name')
-        context['schedule_list'] = Schedule.objects.filter(staff__user=self.request.user, start__gte=timezone.now()).order_by('start')
+        context['schedule_list'] = Schedule.objects.filter(staff__user=self.request.user, start__gte=timezone.now()).order_by('name')
         return context
 
 
@@ -155,8 +155,8 @@ class MyPageWithPk(OnlyUserMixin, generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['staff_list'] = Staff.objects.filter(user__pk=self.kwargs['pk'])
-        context['schedule_list'] = Schedule.objects.filter(staff__user__pk=self.kwargs['pk'])
+        context['staff_list'] = Staff.objects.filter(user__pk=self.kwargs['pk']).order_by('name')
+        context['schedule_list'] = Schedule.objects.filter(staff__user__pk=self.kwargs['pk'], start__gte=timezone.now()).order_by('name')
         return context
 
 
@@ -164,8 +164,8 @@ class MyPageCalendar(OnlyStaffMixin, StaffCalendar):
     template_name = 'booking/my_page_calendar.html'
 
 
-class MyPageConfig(OnlyStaffMixin, generic.TemplateView):
-    template_name = 'booking/my_page_config.html'
+class MyPageDayDetail(OnlyStaffMixin, generic.TemplateView):
+    template_name = 'booking/my_page_day_detail.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -212,10 +212,10 @@ class MyPageScheduleDelete(OnlyScheduleMixin, generic.DeleteView):
 @require_POST
 def my_page_holiday_add(request, pk, year, month, day, hour):
     staff = get_object_or_404(Staff, pk=pk)
-    if request.user.is_authenticated and staff.user != request.user:
-        raise PermissionDenied
+    if staff.user == request.user or request.user.is_superuser:
+        start = datetime.datetime(year=year, month=month, day=day, hour=hour)
+        end = datetime.datetime(year=year, month=month, day=day, hour=hour + 1)
+        Schedule.objects.create(staff=staff, start=start, end=end, name='休暇(システムによる追加)')
+        return redirect('booking:my_page_day_detail', pk=pk, year=year, month=month, day=day)
 
-    start = datetime.datetime(year=year, month=month, day=day, hour=hour)
-    end = datetime.datetime(year=year, month=month, day=day, hour=hour + 1)
-    Schedule.objects.create(staff=staff, start=start, end=end, name='休暇')
-    return redirect('booking:my_page_config', pk=pk, year=year, month=month, day=day)
+    raise PermissionDenied
