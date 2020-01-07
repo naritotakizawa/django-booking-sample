@@ -33,7 +33,7 @@ class Schedule(models.Model):
     start = models.DateTimeField('開始時間')
     end = models.DateTimeField('終了時間')
     name = models.CharField('予約者名', max_length=255)
-    staff = models.ForeignKey('Staff', verbose_name='施術者', on_delete=models.CASCADE)
+    staff = models.ForeignKey('Staff', verbose_name='スタッフ', on_delete=models.CASCADE)
 
     def __str__(self):
         start = timezone.localtime(self.start).strftime('%Y/%m/%d %H:%M:%S')
