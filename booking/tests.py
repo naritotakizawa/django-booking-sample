@@ -189,12 +189,13 @@ class BookingViewTests(TestCase):
 
     def test_post_exists_data(self):
         """既に埋まった時間に予約した場合に、メッセージ表示があることを確認"""
-        now = timezone.localtime().replace(hour=9)
+        now = timezone.localtime().replace(hour=9, minute=0, second=0, microsecond=0)
+        end = now + datetime.timedelta(hours=1)
         staff = get_object_or_404(Staff, pk=1)
-        Schedule.objects.create(staff=staff, start=now, end=now, name='テスト')
+        Schedule.objects.create(staff=staff, start=now, end=end, name='埋めた')
         response = self.client.post(
             resolve_url('booking:booking', pk=1, year=now.year, month=now.month, day=now.day, hour=9),
-            {'name': 'テスト'},
+            {'name': 'これは入らない'},
             follow=True
         )
         messages = list(response.context['messages'])

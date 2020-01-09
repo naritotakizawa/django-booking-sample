@@ -90,17 +90,14 @@ class StaffCalendar(generic.TemplateView):
             calendar[hour] = row
 
         # カレンダー表示する最初と最後の日時の間にある予約を取得する
-        for schedule in Schedule.objects.filter(staff=staff).exclude(
-                Q(start__gte=end_day + datetime.timedelta(days=1)) | Q(end__lte=start_day)):
-            try:
-                local_dt = timezone.localtime(schedule.start)
-                booking_date = local_dt.date()
-                booking_hour = local_dt.hour
-                if booking_date in calendar[booking_hour]:
-                    calendar[booking_hour][booking_date] = False
-            except KeyError:
-                # 今回ならば20時とか、本来予約が入らないはずの時間を参照するとKeyError。
-                pass
+        start_time = datetime.datetime.combine(start_day, datetime.time(hour=9, minute=0, second=0))
+        end_time = datetime.datetime.combine(end_day, datetime.time(hour=17, minute=0, second=0))
+        for schedule in Schedule.objects.filter(staff=staff).exclude(Q(start__gt=end_time) | Q(end__lt=start_time)):
+            local_dt = timezone.localtime(schedule.start)
+            booking_date = local_dt.date()
+            booking_hour = local_dt.hour
+            if booking_hour in calendar and booking_date in calendar[booking_hour]:
+                calendar[booking_hour][booking_date] = False
 
         context['staff'] = staff
         context['calendar'] = calendar
@@ -132,7 +129,7 @@ class Booking(generic.CreateView):
         hour = self.kwargs.get('hour')
         start = datetime.datetime(year=year, month=month, day=day, hour=hour)
         end = datetime.datetime(year=year, month=month, day=day, hour=hour + 1)
-        if Schedule.objects.filter(staff=staff, start__gte=start, end__lte=end).exists():
+        if Schedule.objects.filter(staff=staff, start=start).exists():
             messages.error(self.request, 'すみません、入れ違いで予約がありました。別の日時はどうですか。')
         else:
             schedule = form.save(commit=False)
@@ -186,16 +183,14 @@ class MyPageDayDetail(OnlyStaffMixin, generic.TemplateView):
             calendar[hour] = []
 
         # カレンダー表示する最初と最後の日時の間にある予約を取得する
-        for schedule in Schedule.objects.filter(staff=staff).exclude(
-                Q(start__gte=date + datetime.timedelta(days=1)) | Q(end__lte=date)):
-            try:
-                local_dt = timezone.localtime(schedule.start)
-                booking_hour = local_dt.hour
-                if booking_hour in calendar:
-                    calendar[booking_hour].append(schedule)
-            except KeyError:
-                # 今回ならば20時とか、本来予約が入らないはずの時間を参照するとKeyError。
-                pass
+        start_time = datetime.datetime.combine(date, datetime.time(hour=9, minute=0, second=0))
+        end_time = datetime.datetime.combine(date, datetime.time(hour=17, minute=0, second=0))
+        for schedule in Schedule.objects.filter(staff=staff).exclude(Q(start__gt=end_time) | Q(end__lt=start_time)):
+            local_dt = timezone.localtime(schedule.start)
+            booking_date = local_dt.date()
+            booking_hour = local_dt.hour
+            if booking_hour in calendar:
+                calendar[booking_hour].append(schedule)
 
         context['calendar'] = calendar
         context['staff'] = staff
