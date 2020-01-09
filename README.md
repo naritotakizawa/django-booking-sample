@@ -1,5 +1,5 @@
 # django-booking-sample
-Djangoを使った予約サイトのサンプル
+Djangoを使った予約サイトのサンプル。[解説ブログ](https://narito.ninja/blog/detail/157/)
 
 ## 動かし方
 ```
